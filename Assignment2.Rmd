@@ -1,0 +1,42 @@
+---
+title: "Assignment2"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r}
+
+```
+
+```{r}
+# Clear plots
+if(!is.null(dev.list())) dev.off()
+# Clean workspace
+```
+
+
+```{r}
+rm(list=ls())
+#load data
+data("gles", package = "MNLpred")
+set.seed(1310)
+train <- sample(1:nrow(gles),round(0.66*nrow(gles),0)) # rows for training
+df <- gles[train,]  # working/training set
+test <- gles[-train,]  # testing set
+```
+
+We can see the summary and nothing too suspicious when look at the data. In addition, no nulls or blanks in the data.
+```{r}
+summary(df)
+is.null(df) #no nulls in the data
+which(df=="") #no blanks found in the data
+df$vote <- factor(df$vote)
+round(prop.table(summary(df$vote)),2)
+plot
+boxplot(df)
+library(car)
+Boxplot(df)
+```
+
