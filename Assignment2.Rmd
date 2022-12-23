@@ -5,6 +5,74 @@ editor_options:
   chunk_output_type: console
 ---
 
+# Tasks
+
+**Note**:
+
+• Dataset is imbalanced.
+• Features are categorical (Nominal, Ordinal, Binary) and numerical.
+• Missing imputation does not seem to be needed in your pipeline.
+• Use nominal and ordinal polytomous models.
+• Propose a hierarchical logit approach to predict right, center and left wing voting in the
+political spectrum.
+
+## Data Preparation
+
+**Univariate Descriptive Analysis (to be included for each variable) [Eliya]:**
+
+• Original numeric variables corresponding to qualitative concepts are present then they
+have to be converted to factors.
+• Original numeric variables corresponding to real quantitative concepts are kept as numeric
+but additional factors should also be created as a discretization of each numeric variable.
+• Exploratory Data Analysis for each variable (numeric summary and graphic support).
+
+**Data Quality Report [Achraf]:**
+Per variable, count:
+• Number of missing values
+• Number of errors (including inconsistencies)
+• Number of outliers
+• Rank variables according the sum of missing values (and errors).
+Per individuals, count:
+• number of missing values
+• number of errors,
+• number of outliers
+• Identify individuals considered as multivariant outliers.
+
+Create variable adding the total number missing values, outliers and errors. Describe these
+variables, to which other variables exist higher associations.
+• Compute the correlation with all other variables. Rank these variables according the
+correlation
+• Compute for every group of individuals (group of age, size of town, singles, married, ...) the
+mean of missing/outliers/errors values. Rank the groups according the computed mean.
+
+**Profiling [Eliya]:**
+• Polytomous Target: 6 parties
+• Polytomous Target: right/center/left orientation.
+
+ROSE package for balancing data
+
+## Modeling
+
+-   Train and test split
+
+-   (use set.seed(your birthday))
+
+```{=html}
+<!-- -->
+```
+-   Model reasonable factors as numeric variables also using transformations if needed.
+
+-   Grouping levels in factors is allowed.
+
+-   Adding factor main effects to the best model containing numeric variables
+
+-   Adding factor main effects and interactions (limit your statement to order 2) to the best
+    model containing numeric variables.
+
+-   Goodness of fit and Model Interpretation for each proposal (nominal/ordinal).
+
+-   Goodness of fit and Model Interpretation for political orientation (right/center/left). Make
+    your own allocation of political parties to the right/center/left wing orientation.
 
 ```{r}
 
@@ -15,7 +83,6 @@ editor_options:
 if(!is.null(dev.list())) dev.off()
 # Clean workspace
 ```
-
 
 ```{r}
 rm(list=ls())
@@ -28,6 +95,7 @@ test <- gles[-train,]  # testing set
 ```
 
 We can see the summary and nothing too suspicious when look at the data. In addition, no nulls or blanks in the data.
+
 ```{r}
 summary(df)
 is.null(df) #no nulls in the data
@@ -39,4 +107,3 @@ boxplot(df)
 library(car)
 Boxplot(df)
 ```
-
