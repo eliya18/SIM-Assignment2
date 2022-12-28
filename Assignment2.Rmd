@@ -75,26 +75,64 @@ ROSE package for balancing data
     your own allocation of political parties to the right/center/left wing orientation.
 
 ```{r}
-
-```
-
-```{r}
 # Clear plots
 if(!is.null(dev.list())) dev.off()
 # Clean workspace
+rm(list=ls())
+
+
+```
+First, we turn qualitative,nominal and ordinal variables into factors. When it's east/west or gender we trun it into a factor with the actual name.
+
+We can see the summary and nothing too suspicious when look at the data. We can see CDU/CSU party gets most votes on our sample, majority of voters are open for immigration (around 3,4,5), most voters are from the east of Germany, most voters have a plus average intrest in the elections, most voters income is relativity high because we can see that the variable (before being a factor) has a mean and median around 3 and as a factor we see 582 with income 3.
+In addition, no nulls or blanks in the data. From the boxplot we can see that income and east/west have points outside the box but we know why is it.
+When ploting the data we don't see anything suspicious 
+When define political orientation we see most voters are center, then left and the less is right, we can see that 2/3 of the voters are voting for the center parties.
+```{r}
+data("gles", package = "MNLpred")
+df <- gles
+summary(gles)
+df$vote <- factor(df$vote)
+df$egoposition_immigration <- factor(df$egoposition_immigration)
+df$f.ostwest <- factor(df$ostwest, labels = c("west","east"))
+df$political_interest <- factor(df$political_interest)
+df$income <- factor(df$income)
+df$f.gender <- factor(df$gender,labels = c("male","female"))
+summary(df)
+library(car)
+boxplot(df[,c(1:2,4:5,7:8)])
+plot(df[,c(1:2,4:5,7:8)])
+
+is.null(df) #no nulls in the data
+which(df=="") #no blanks found in the data
+round(prop.table(summary(df$vote)),2)
+
+df$f.vote <- factor(df$vote, labels = c("left","center","right"))
+df[which(df$vote=="AfD"),9] <- "right"
+df[which(df$vote=="CDU/CSU"),9] <- "center"
+df[which(df$vote=="FDP"),9] <- "center"
+df[which(df$vote=="Gruene"),9] <- "left"
+df[which(df$vote=="LINKE"),9] <- "left"
+df[which(df$vote=="SPD"),9] <- "center"
+
+df$f.vote <-factor(df$f.vote)
+summary(df)
+round(prop.table(summary(df$f.vote)),2)
+library(GGally)
+ggpairs(df[,c(1:2,4:5,7:8,9)])
 ```
 
 ```{r}
 rm(list=ls())
 #load data
-data("gles", package = "MNLpred")
+
 set.seed(1310)
 train <- sample(1:nrow(gles),round(0.66*nrow(gles),0)) # rows for training
 df <- gles[train,]  # working/training set
 test <- gles[-train,]  # testing set
 ```
 
-We can see the summary and nothing too suspicious when look at the data. In addition, no nulls or blanks in the data.
+
 
 ```{r}
 summary(df)
