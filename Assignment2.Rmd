@@ -82,6 +82,7 @@ rm(list=ls())
 
 
 ```
+
 First, we turn qualitative,nominal and ordinal variables into factors. When it's east/west or gender we trun it into a factor with the actual name.
 
 We can see the summary and nothing too suspicious when look at the data. We can see CDU/CSU party gets most votes on our sample, majority of voters are open for immigration (around 3,4,5), most voters are from the east of Germany, most voters have a plus average intrest in the elections, most voters income is relativity high because we can see that the variable (before being a factor) has a mean and median around 3 and as a factor we see 582 with income 3.
@@ -121,6 +122,22 @@ round(prop.table(summary(df$f.vote)),2)
 library(GGally)
 ggpairs(df[,c(1:2,4:5,7:8,9)])
 ```
+
+Profile and Feature Selection - we are going to look at two target variables, vote and f.vote
+*f.vote:*
+When we analysis the categorical variables we see voters for center parties are most significant when immigration policy is 5 so quite in the middle between open to not. Most of them are from the east part while voters from the west part are least significant. We can also see the income=4 is significant so more stable financially voters are for the center parties.
+Left parties voters are characterized with open views on immigration, both male and female and high income.
+Right parties are mostly against immigration, they don't have much interest in politics, mostly male voters and quite low income voters.
+*vote*
+We can see that for almost all parties the most significant value is immigration views. There is only one right party in the data so the inferring is like the above. CDU/CSU voters immigration openness have a wide spectrum (lowest is 1 and highest is 7). income = 2 so quite in the middle at that aspect. FDP is most significant for immigration while it can be 6, 0 or 2. Gruene is most significant for immigration 2, mostly female voters with quite high political interest. LINKE voters significantly when they from the west part of Germany and open for immigration policy. SPD voters are significant to have openness for immigration and low political interest.
+```{r}
+library(FactoMineR)
+res.cat_f.vote <- catdes(df[,c(2,4,5,7:9)],num.var=6);res.cat_f.vote
+
+res.cat_vote <- catdes(df[,c(1,2,4,5,7,8)],num.var=1);res.cat_vote
+
+```
+
 
 ```{r}
 rm(list=ls())
