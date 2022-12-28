@@ -79,8 +79,6 @@ ROSE package for balancing data
 if(!is.null(dev.list())) dev.off()
 # Clean workspace
 rm(list=ls())
-
-
 ```
 
 First, we turn qualitative,nominal and ordinal variables into factors. When it's east/west or gender we trun it into a factor with the actual name.
@@ -108,7 +106,7 @@ is.null(df) #no nulls in the data
 which(df=="") #no blanks found in the data
 round(prop.table(summary(df$vote)),2)
 
-df$f.vote <- factor(df$vote, labels = c("left","center","right"))
+df$f.vote <- ''
 df[which(df$vote=="AfD"),9] <- "right"
 df[which(df$vote=="CDU/CSU"),9] <- "center"
 df[which(df$vote=="FDP"),9] <- "center"
@@ -140,25 +138,25 @@ res.cat_vote <- catdes(df[,c(1,2,4,5,7,8)],num.var=1);res.cat_vote
 
 
 ```{r}
-rm(list=ls())
-#load data
-
 set.seed(1310)
-train <- sample(1:nrow(gles),round(0.66*nrow(gles),0)) # rows for training
-df <- gles[train,]  # working/training set
-test <- gles[-train,]  # testing set
-```
-
-
-
-```{r}
-summary(df)
-is.null(df) #no nulls in the data
-which(df=="") #no blanks found in the data
-df$vote <- factor(df$vote)
-round(prop.table(summary(df$vote)),2)
-plot
-boxplot(df)
-library(car)
-Boxplot(df)
+t <- sample(1:nrow(df),round(0.66*nrow(df),0)) # rows for training
+train <- df[t,]  # working/training set
+test <- df[-t,]  # testing set
+col(train)
+m0 <- multinom(f.vote ~ 1, data = train) #we start from the null model
+summary(m0)
+#we do not have numerical quantitative variable and since all of the rest are based on numerical nominal variables we will use all of them
+m1 <- multinom(f.vote ~ egoposition_immigration+political_interest+income, data = train)
+summary(m1)
+#perform step for the best model so far
+m2 <- step(m1)
+summary(m2) #best model so far has D() of 906.63 and AIC 950.63
+anova(m1,m2) #we cannot reject the null hypothesis and the models are equivalent so it is better for us the small model when we already know it's significant that they are equivalent
+m3 <- multinom(f.vote ~ egoposition_immigration*f.ostwest + egoposition_immigration+f.ostwest + egoposition_immigration*f.gender + egoposition_immigration+f.gender, data = train) #adding interactions and additive of the factors
+summary(m3)
+m4 <- step(m3)
+summary(m4) #best model so far we got f.vote ~ egoposition_immigration + f.ostwest + f.gender
+#results are Deviance = 890.39 AIC = 942.39
+#since we don't have order between left center right we use multinom() and not polr()
+#FOR US ONLY - I think since we don't have numerical quantitative variable we don't have use for 2nd or 3rd order, I think there is a way to check whether or not we need it.
 ```
