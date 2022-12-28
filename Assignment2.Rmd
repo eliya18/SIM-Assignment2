@@ -159,4 +159,6 @@ summary(m4) #best model so far we got f.vote ~ egoposition_immigration + f.ostwe
 #results are Deviance = 890.39 AIC = 942.39
 #since we don't have order between left center right we use multinom() and not polr()
 #FOR US ONLY - I think since we don't have numerical quantitative variable we don't have use for 2nd or 3rd order, I think there is a way to check whether or not we need it.
+#FOR US ONLY - we can also try to turn the immigration number into a range where 0-3, 4-7, 8-10 are open, mild, restrictive respectively - BUT I guess if we do that we should do it from the beginning where also the test data will appear like that otherwise we won't be able to compare the results under predict()
+
 ```
