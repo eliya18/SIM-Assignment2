@@ -9,45 +9,19 @@ editor_options:
 
 **Note**:
 
-• Dataset is imbalanced.
-• Features are categorical (Nominal, Ordinal, Binary) and numerical.
-• Missing imputation does not seem to be needed in your pipeline.
-• Use nominal and ordinal polytomous models.
-• Propose a hierarchical logit approach to predict right, center and left wing voting in the
-political spectrum.
+• Dataset is imbalanced. • Features are categorical (Nominal, Ordinal, Binary) and numerical. • Missing imputation does not seem to be needed in your pipeline. • Use nominal and ordinal polytomous models. • Propose a hierarchical logit approach to predict right, center and left wing voting in the political spectrum.
 
 ## Data Preparation
 
 **Univariate Descriptive Analysis (to be included for each variable) [Eliya]:**
 
-• Original numeric variables corresponding to qualitative concepts are present then they
-have to be converted to factors.
-• Original numeric variables corresponding to real quantitative concepts are kept as numeric
-but additional factors should also be created as a discretization of each numeric variable.
-• Exploratory Data Analysis for each variable (numeric summary and graphic support).
+• Original numeric variables corresponding to qualitative concepts are present then they have to be converted to factors. • Original numeric variables corresponding to real quantitative concepts are kept as numeric but additional factors should also be created as a discretization of each numeric variable. • Exploratory Data Analysis for each variable (numeric summary and graphic support).
 
-**Data Quality Report [Achraf]:**
-Per variable, count:
-• Number of missing values
-• Number of errors (including inconsistencies)
-• Number of outliers
-• Rank variables according the sum of missing values (and errors).
-Per individuals, count:
-• number of missing values
-• number of errors,
-• number of outliers
-• Identify individuals considered as multivariant outliers.
+**Data Quality Report [Achraf]:** Per variable, count: • Number of missing values • Number of errors (including inconsistencies) • Number of outliers • Rank variables according the sum of missing values (and errors). Per individuals, count: • number of missing values • number of errors, • number of outliers • Identify individuals considered as multivariant outliers.
 
-Create variable adding the total number missing values, outliers and errors. Describe these
-variables, to which other variables exist higher associations.
-• Compute the correlation with all other variables. Rank these variables according the
-correlation
-• Compute for every group of individuals (group of age, size of town, singles, married, ...) the
-mean of missing/outliers/errors values. Rank the groups according the computed mean.
+Create variable adding the total number missing values, outliers and errors. Describe these variables, to which other variables exist higher associations. • Compute the correlation with all other variables. Rank these variables according the correlation • Compute for every group of individuals (group of age, size of town, singles, married, ...) the mean of missing/outliers/errors values. Rank the groups according the computed mean.
 
-**Profiling [Eliya]:**
-• Polytomous Target: 6 parties
-• Polytomous Target: right/center/left orientation.
+**Profiling [Eliya]:** • Polytomous Target: 6 parties • Polytomous Target: right/center/left orientation.
 
 ROSE package for balancing data
 
@@ -57,22 +31,17 @@ ROSE package for balancing data
 
 -   (use set.seed(your birthday))
 
-```{=html}
-<!-- -->
-```
 -   Model reasonable factors as numeric variables also using transformations if needed.
 
 -   Grouping levels in factors is allowed.
 
 -   Adding factor main effects to the best model containing numeric variables
 
--   Adding factor main effects and interactions (limit your statement to order 2) to the best
-    model containing numeric variables.
+-   Adding factor main effects and interactions (limit your statement to order 2) to the best model containing numeric variables.
 
 -   Goodness of fit and Model Interpretation for each proposal (nominal/ordinal).
 
--   Goodness of fit and Model Interpretation for political orientation (right/center/left). Make
-    your own allocation of political parties to the right/center/left wing orientation.
+-   Goodness of fit and Model Interpretation for political orientation (right/center/left). Make your own allocation of political parties to the right/center/left wing orientation.
 
 ```{r}
 # Clear plots
@@ -82,7 +51,6 @@ rm(list=ls())
 ```
 
 # Load Data
-
 
 ```{r}
 
@@ -153,7 +121,7 @@ Taking into account metadata, no errors where found in the data since all values
 
 Since data is all categorical there is no way to detect outliers. However, we will label the lest frequent categories as outliers.
 
-### Univariate 
+### Univariate
 
 Let's see the frequency of each level in each attribute
 
@@ -203,52 +171,88 @@ number_of_outliers_per_attribute <- append(number_of_outliers_per_attribute,0)
 str(number_of_outliers_per_attribute)
 ```
 
+Outliers won't be removed. However, it's important to keep in mind those classes that are a minority in case in further iterations levels are grouped to improve the model.
+
 ### Multivariate
 
+Detecting multivariate outliers it's not an easy process since all data is factors and we can't apply methods like mahalanobis distance. One solution could be using MCA which is a factorial method (TODO)
+
 ```{r}
- sapply(gles, class)
+ #sapply(gles, class)
 ```
 
 ```{r}
-library(chemometrics)
-res.out<-Moutlier(gles[,c(2,3,4,5,6)],quantile=0.975)
+#library(chemometrics)
+#res.out<-Moutlier(gles[,c(2,3,4,5,6)],quantile=0.975)
 
 #str(res.out)
-res.out$cutoff
+#res.out$cutoff
 ## [1] 4.297305
-which((res.out$md > res.out$cutoff) & (res.out$rd > res.out$cutoff))
+#which((res.out$md > res.out$cutoff) & (res.out$rd > res.out$cutoff))
 ## 1048
 ## 1045
-plot( res.out$md, res.out$rd )
-abline(h=res.out$cutoff, col="red")
-abline(v=res.out$cutoff, col="red")
+#plot( res.out$md, res.out$rd )
+#abline(h=res.out$cutoff, col="red")
+#abline(v=res.out$cutoff, col="red")
 ```
 
 ## Missing data
 
+There is no missing data so no imputation is needed.
+
 ```{r}
 is.null(df) #no nulls in the data
 number_of_na_per_attribute = c(rep(0, 6));number_of_na_per_attribute
-```
-
-## Quality report
-
-```{r}
-# per variabe
-
-# per individual
-
+df$na = 0
 ```
 
 ## Data quality report
 
+Let's create the report for each attribute and per individual takining into account the results obtained in the different processes.
+
+```{r}
+# per variabe
+attributes_report  <- data.frame(attributes = c(names(df[,c(1:6)])), errors=number_of_errors_per_attribute, outliers=number_of_outliers_per_attribute, na=number_of_na_per_attribute)
+
+print(attributes_report)
+
+# per individual
+
+individuals_report = df[,c("error","outlier", "na")]
+print(individuals_report)
+
+```
+
+Let's compute the correlation of variables in terms of errors
+
+```{r}
+
+attributes_report$total <- attributes_report$error +  attributes_report$outlier + attributes_report$na
+attributes_report = attributes_report[order(attributes_report$total,decreasing = TRUE),]
+print(attributes_report)
 
 
+```
 
+Finally let's check the most problematic individuals
 
+```{r}
+
+individuals_report$total = individuals_report$error + individuals_report$outlier + individuals_report$na
+individuals_report = individuals_report[order(individuals_report$total,decreasing = TRUE),]
+
+print(individuals_report)
+```
+
+As we can see in general, data quality is pretty good. The only thing it might need is to group some levels in further iterations
+
+```{r}
+summary(df)
+df <- df[,c(1:8)] # Remove attributes that are used for the report
+
+```
 
 # Univariate Descriptive Analysis
-
 
 ```{r}
 summary(df)
@@ -256,10 +260,8 @@ summary(df)
 
 First, we turn qualitative,nominal and ordinal variables into factors. When it's east/west or gender we trun it into a factor with the actual name.
 
-We can see the summary and nothing too suspicious when look at the data. We can see CDU/CSU party gets most votes on our sample, majority of voters are open for immigration (around 3,4,5), most voters are from the east of Germany, most voters have a plus average intrest in the elections, most voters income is relativity high because we can see that the variable (before being a factor) has a mean and median around 3 and as a factor we see 582 with income 3.
-In addition, no nulls or blanks in the data. From the boxplot we can see that income and east/west have points outside the box but we know why is it.
-When ploting the data we don't see anything suspicious 
-When define political orientation we see most voters are center, then left and the less is right, we can see that 2/3 of the voters are voting for the center parties.
+We can see the summary and nothing too suspicious when look at the data. We can see CDU/CSU party gets most votes on our sample, majority of voters are open for immigration (around 3,4,5), most voters are from the east of Germany, most voters have a plus average intrest in the elections, most voters income is relativity high because we can see that the variable (before being a factor) has a mean and median around 3 and as a factor we see 582 with income 3. In addition, no nulls or blanks in the data. From the boxplot we can see that income and east/west have points outside the box but we know why is it. When ploting the data we don't see anything suspicious When define political orientation we see most voters are center, then left and the less is right, we can see that 2/3 of the voters are voting for the center parties.
+
 ```{r}
 library(car)
 boxplot(df[,c(1:2,4:5,7:8)])
@@ -282,13 +284,8 @@ library(GGally)
 ggpairs(df[,c(1:2,4:5,7:8,9)])
 ```
 
-Profile and Feature Selection - we are going to look at two target variables, vote and f.vote
-*f.vote:*
-When we analysis the categorical variables we see voters for center parties are most significant when immigration policy is 5 so quite in the middle between open to not. Most of them are from the east part while voters from the west part are least significant. We can also see the income=4 is significant so more stable financially voters are for the center parties.
-Left parties voters are characterized with open views on immigration, both male and female and high income.
-Right parties are mostly against immigration, they don't have much interest in politics, mostly male voters and quite low income voters.
-*vote*
-We can see that for almost all parties the most significant value is immigration views. There is only one right party in the data so the inferring is like the above. CDU/CSU voters immigration openness have a wide spectrum (lowest is 1 and highest is 7). income = 2 so quite in the middle at that aspect. FDP is most significant for immigration while it can be 6, 0 or 2. Gruene is most significant for immigration 2, mostly female voters with quite high political interest. LINKE voters significantly when they from the west part of Germany and open for immigration policy. SPD voters are significant to have openness for immigration and low political interest.
+Profile and Feature Selection - we are going to look at two target variables, vote and f.vote *f.vote:* When we analysis the categorical variables we see voters for center parties are most significant when immigration policy is 5 so quite in the middle between open to not. Most of them are from the east part while voters from the west part are least significant. We can also see the income=4 is significant so more stable financially voters are for the center parties. Left parties voters are characterized with open views on immigration, both male and female and high income. Right parties are mostly against immigration, they don't have much interest in politics, mostly male voters and quite low income voters. *vote* We can see that for almost all parties the most significant value is immigration views. There is only one right party in the data so the inferring is like the above. CDU/CSU voters immigration openness have a wide spectrum (lowest is 1 and highest is 7). income = 2 so quite in the middle at that aspect. FDP is most significant for immigration while it can be 6, 0 or 2. Gruene is most significant for immigration 2, mostly female voters with quite high political interest. LINKE voters significantly when they from the west part of Germany and open for immigration policy. SPD voters are significant to have openness for immigration and low political interest.
+
 ```{r}
 library(FactoMineR)
 res.cat_f.vote <- catdes(df[,c(2,4,5,7:9)],num.var=6);res.cat_f.vote
@@ -297,8 +294,11 @@ res.cat_vote <- catdes(df[,c(1,2,4,5,7,8)],num.var=1);res.cat_vote
 
 ```
 
-
 # Modeling
+
+## Nominal proposal
+
+### Train test split
 
 ```{r}
 set.seed(1310)
@@ -307,22 +307,109 @@ t <- sample(1:nrow(df),round(0.66*nrow(df),0)) # rows for training
 train <- df[t,]  # working/training set
 test <- df[-t,]  # testing set
 col(train)
-m0 <- multinom(f.vote ~ 1, data = train) #we start from the null model
+summary(train)
+```
+
+### Baseline model
+
+```{r}
+m0 <- multinom(vote ~ 1, data = train) #we start from the null model
 summary(m0)
 #we do not have numerical quantitative variable and since all of the rest are based on numerical nominal variables we will use all of them
-m1 <- multinom(f.vote ~ egoposition_immigration+political_interest+income, data = train)
+m1 <- multinom(vote ~ egoposition_immigration+political_interest+income, data = train)
 summary(m1)
 #perform step for the best model so far
 m2 <- step(m1)
 summary(m2) #best model so far has D() of 906.63 and AIC 950.63
 anova(m1,m2) #we cannot reject the null hypothesis and the models are equivalent so it is better for us the small model when we already know it's significant that they are equivalent
-m3 <- multinom(f.vote ~ egoposition_immigration*f.ostwest + egoposition_immigration+f.ostwest + egoposition_immigration*f.gender + egoposition_immigration+f.gender, data = train) #adding interactions and additive of the factors
+```
+
+### Improving the model
+
+```{r}
+m3 <- multinom(vote ~ egoposition_immigration*f.ostwest + egoposition_immigration+f.ostwest + egoposition_immigration*f.gender + egoposition_immigration+f.gender, data = train) #adding interactions and additive of the factors
 summary(m3)
 m4 <- step(m3)
-summary(m4) #best model so far we got f.vote ~ egoposition_immigration + f.ostwest + f.gender
+summary(m4) 
+#best model so far we got f.vote ~ egoposition_immigration + f.ostwest + f.gender
 #results are Deviance = 890.39 AIC = 942.39
 #since we don't have order between left center right we use multinom() and not polr()
 #FOR US ONLY - I think since we don't have numerical quantitative variable we don't have use for 2nd or 3rd order, I think there is a way to check whether or not we need it.
 #FOR US ONLY - we can also try to turn the immigration number into a range where 0-3, 4-7, 8-10 are open, mild, restrictive respectively - BUT I guess if we do that we should do it from the beginning where also the test data will appear like that otherwise we won't be able to compare the results under predict()
 
 ```
+
+### Goodness of fit and model interpretation
+
+Model interpretation
+
+Prediction of probabilities
+
+```{r}
+predict(m4, type="probs", newdata=data.frame(egoposition_immigration=factor(4), f.ostwest = factor("west"), f.gender=factor("male")))
+
+```
+
+On train
+
+```{r}
+
+tt<-table(predict(m4),train$vote);tt #Checks that the model i not predicting part times
+
+tt
+100*sum(diag(tt))/sum(tt) # ACCURACY of the model
+
+
+```
+
+On test
+
+```{r}
+tt<-table(predict(m4, newdata = test),test$f.vote);tt #Checks that the model i not predicting part times
+100*sum(diag(tt))/sum(tt) # ACCURACY of the model
+
+
+predicted <- predict(m4, newdata = test);predicted
+actual <- test$vote; actual
+
+
+library(caret)
+
+confusionMatrix(predicted, actual, mode = "everything")
+```
+
+## Ordinal proposal
+
+### Train test split
+
+### Baseline model
+
+### Improving the model
+
+### Goodness of fit and model interpretation
+
+## 
+
+```{r}
+
+
+
+exp(coef(m4))
+
+```
+
+```{r}
+
+
+ggplot(data = train, aes(x =  egoposition_immigration, 
+                                  y = f.vote)) +
+  geom_line() + # Mean
+  #facet_wrap(.~ c.use, ncol = 3) + #, scales = "free_y"
+  #scale_y_continuous() + # % labels
+  #scale_x_continuous() +
+  theme_bw() +
+  labs(y = "Observed logodds",
+       x = "egoposition_immigration") # Always label your axes ;)
+```
+
+## Herarchical proposal
