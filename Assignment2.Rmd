@@ -341,9 +341,43 @@ summary(m4)
 
 ### Goodness of fit and model interpretation
 
-Model interpretation
+**Goodness of fit**
 
-Prediction of probabilities
+```{r}
+
+m4$deviance;m4$edf;2*nrow(df)-m4$edf
+1-pchisq(m4$deviance, 2*nrow(df)-m4$edf)
+```
+
+For the best model obtained which include egoposition_immigration, f.ostwest and f.gender has a p value of 0.3514997. This means that we fail to reject H0 where the model is consistent to data so we conclude by saying model fit's well the data.
+
+**Model interpretation**
+
+Since egoposition_immigration has many levels, we will interpret the effect of f.ostweseast and f.genderfaemale.
+
+```{r}
+coef(m4)
+#f.ostwesteast
+summary(m4)
+coef(m4)[,12]
+exp(coef(m4)[,12])
+100*(exp(coef(m4)[,12])-1)
+
+#f.genderfemale
+coef(m4)[13]
+exp(coef(m4)[,13])
+100*(exp(coef(m4)[,13])-1)
+```
+
+The log odds of being in from the east of germany will increase by 0.826 fior CDU/CSU, 0.825 for FDP, 0.824for Gruene, 0.07 for LINKE, 0.67 fSPD. The increasce is similar for three of the candidates and then we can see that SPD is following by not that far. Finally LINKE seems the least increasced by people from the east of germany
+
+Being a female we can see different outcomes where there is also an increase of 1.21 for CDU/CSU, 1.30 for FDP, 1.72for Gruene, 1.15 for LINKE and 1.35 for SPD. In this case, all have a similar incease. However, Gruene is the one being the most benefited of that level.
+
+With the egopositional_immigration there are a lot of levels but we can summarize by saying that levels 1 and 2 have an increase around 22 of the log odss in the two first levels. Then the rest of the levels (3-10) are decreascing the log odds with some levels more variable than others but we can see that the majority of values reside between 10-15.
+
+**Prediction of probabilities**
+
+**Predictive power**
 
 ```{r}
 predict(m4, type="probs", newdata=data.frame(egoposition_immigration=factor(4), f.ostwest = factor("west"), f.gender=factor("male")))
