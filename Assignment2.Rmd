@@ -369,20 +369,41 @@ exp(coef(m4)[,13])
 100*(exp(coef(m4)[,13])-1)
 ```
 
-The log odds of being in from the east of germany will increase by 0.826 fior CDU/CSU, 0.825 for FDP, 0.824for Gruene, 0.07 for LINKE, 0.67 fSPD. The increasce is similar for three of the candidates and then we can see that SPD is following by not that far. Finally LINKE seems the least increasced by people from the east of germany
+The log odds of being in from the east of germany will increase by 0.826 fior CDU/CSU, 0.825 for FDP, 0.824for Gruene, 0.07 for LINKE, 0.67 fSPD. The increasce is similar for three of the candidates and then we can see that SPD is following by not that far. Finally LINKE seems the least increased by people from the east of Germany
 
-Being a female we can see different outcomes where there is also an increase of 1.21 for CDU/CSU, 1.30 for FDP, 1.72for Gruene, 1.15 for LINKE and 1.35 for SPD. In this case, all have a similar incease. However, Gruene is the one being the most benefited of that level.
+Being a female we can see different outcomes where there is also an increase of 1.21 for CDU/CSU, 1.30 for FDP, 1.72for Gruene, 1.15 for LINKE and 1.35 for SPD. In this case, all have a similar increase. However, Gruene is the one being the most benefited of that level.
 
-With the egopositional_immigration there are a lot of levels but we can summarize by saying that levels 1 and 2 have an increase around 22 of the log odss in the two first levels. Then the rest of the levels (3-10) are decreascing the log odds with some levels more variable than others but we can see that the majority of values reside between 10-15.
+With the egopositional_immigration there are a lot of levels but we can summarize by saying that levels 1 and 2 have an increase around 22 of the log odds in the two first levels. Then the rest of the levels (3-10) are decreascing the log odds with some levels more variable than others but we can see that the majority of values reside between 10-15.
 
 **Prediction of probabilities**
 
-**Predictive power**
+Let's try different combinations of parameters of each to try to asses the prediction probabilities for each party
 
 ```{r}
-predict(m4, type="probs", newdata=data.frame(egoposition_immigration=factor(4), f.ostwest = factor("west"), f.gender=factor("male")))
+# p
+summary(df$egoposition_immigration)
+# neutral immigration, from west and male
+predict(m4, type="probs", newdata=data.frame(egoposition_immigration=factor(5), f.ostwest = factor("west"), f.gender=factor("male")))
+
+# neutral immigration, from west and female
+predict(m4, type="probs", newdata=data.frame(egoposition_immigration=factor(5), f.ostwest = factor("west"), f.gender=factor("female")))
+
+# neutral immigration, from east and male
+predict(m4, type="probs", newdata=data.frame(egoposition_immigration=factor(5), f.ostwest = factor("east"), f.gender=factor("male")))
+
+# neutral immigration, from east and female
+predict(m4, type="probs", newdata=data.frame(egoposition_immigration=factor(5), f.ostwest = factor("east"), f.gender=factor("female")))
+
 
 ```
+
+From this results we obtained that males and females from east and west with a neutral egoposition_immigration are more likely to vote for CDU/CSU and then SPD. So this means that gender and being from the west are not big factors in the predictibility of the model.
+
+**TODO**: Group levels to better explain the variability of predictions depending of egoposition_immigration.
+
+**Predictive power**
+
+Let's check the predictive power of the model using both train and test data and find the performance metrics of the model.
 
 On train
 
@@ -411,6 +432,8 @@ library(caret)
 
 confusionMatrix(predicted, actual, mode = "everything")
 ```
+
+We get an accuracy of 32% which is not a great result.
 
 ## Ordinal proposal
 
