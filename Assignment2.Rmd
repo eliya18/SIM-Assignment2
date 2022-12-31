@@ -339,6 +339,82 @@ summary(m4)
 
 ```
 
+
+Model with target variable vote only
+```{r}
+library(nnet)
+set.seed(1310)
+t <- sample(1:nrow(df),round(0.66*nrow(df),0)) # rows for training
+train <- df[t,]  # working/training set
+test <- df[-t,]  # testing set
+col(train)
+summary(train)
+m0 <- multinom(vote ~ 1, data = train) #we start from the null model
+summary(m0) #very high AIC and Deviance
+m1 <- multinom(vote ~ egoposition_immigration+political_interest+income, data = train) #model with numerical qualitative variables
+summary(m1) #improve from the null model
+anova(m1,m0) #nested models with p_value 0 so we reject the null hypothesis and say models are not equivalent 
+AIC(m1,m0)
+#we can see m1 has better AIC and Deviance
+m2 <- step(m1)
+summary(m2)
+anova(m2,m1) #we cannot reject the null hypothesis so it's statistically significant to say models are equivalent
+AIC(m2,m1) #m2 has a lower AIC but m1 has lower deviance
+m3 <- multinom(vote ~ egoposition_immigration*f.ostwest + egoposition_immigration+f.ostwest + egoposition_immigration*f.gender + egoposition_immigration+f.gender, data = train) #adding factors
+summary(m3)
+m4 <- step(m3)
+summary(m4)
+anova(m4,m3,m2)
+AIC(m4,m3,m2) #we can see that m3 has the lowest AIC, however m2 has the lowest deviance and m2 and m4 are not equivalent
+BIC(m4,m3,m2) #THIS ONE I DON'T KNOW IF TO LEAVE IN OR NOT, I THOUGHT MAYBE IT CAN SOLVED OUR AIC Deviance CONTRIDICTION
+#we are going with the lowest AIC so m4 is best model so far.
+
+```
+
+Model with target variable f.vote only
+```{r}
+set.seed(1310)
+t <- sample(1:nrow(df),round(0.66*nrow(df),0)) # rows for training
+train <- df[t,]  # working/training set
+test <- df[-t,]  # testing set
+col(train)
+summary(train)
+mm0 <- multinom(f.vote ~ 1, data = train) #we start from the null model
+summary(mm0)
+#we do not have numerical quantitative variable and since all of the rest are based on numerical nominal variables we will use all of them
+mm1 <- multinom(f.vote ~ egoposition_immigration+political_interest+income, data = train)
+summary(mm1)
+#perform step for the best model so far
+mm2 <- step(mm1)
+summary(mm2) #best model so far has D() of 906.63 and AIC 950.63
+anova(mm1,mm2) #we cannot reject the null hypothesis and the models are equivalent so it is better for us the small model when we already know it's significant that they are equivalent
+mm3 <- multinom(f.vote ~ egoposition_immigration*f.ostwest + egoposition_immigration+f.ostwest + egoposition_immigration*f.gender + egoposition_immigration+f.gender, data = train) #adding interactions and additive of the factors
+summary(mm3)
+mm4 <- step(mm3)
+summary(mm4) #best model so far we got f.vote ~ egoposition_immigration + f.ostwest + f.gender
+#results are Deviance = 890.39 AIC = 942.39
+#since we don't have order between left center right we use multinom() and not polr()
+#FOR US ONLY - I think since we don't have numerical quantitative variable we don't have use for 2nd or 3rd order, I think there is a way to check whether or not we need it.
+#FOR US ONLY - we can also try to turn the immigration number into a range where 0-3, 4-7, 8-10 are open, mild, restrictive respectively - BUT I guess if we do that we should do it from the beginning where also the test data will appear like that otherwise we won't be able to compare the results under predict()
+anova(mm4,mm3)
+#what should we do when 2 models which one has low AIC but higher deviance compare to the other model (as we see between m3 and m4)
+
+```
+
+Adding 3 levels of immigration policies to see if it will improve the current results we have.
+```{r}
+df$f.pos_imm <- ""
+df$f.pos_imm <- ifelse(df$egoposition_immigration %in% c(0,1,2,3),"open",ifelse(df$egoposition_immigration %in% c(4,5,6,7),"mild","restrictive"))
+set.seed(1310)
+t <- sample(1:nrow(df),round(0.66*nrow(df),0)) # rows for training
+train <- df[t,]  # working/training set
+test <- df[-t,]  # testing set
+m5 <- multinom(f.vote ~ f.pos_imm*f.ostwest + f.pos_imm+f.ostwest + f.pos_imm*f.gender + f.pos_imm+f.gender, data = train)
+summary(m5)
+m6 <- step(m5)
+summary(m6)
+```
+
 ### Goodness of fit and model interpretation
 
 **Goodness of fit**
