@@ -415,6 +415,72 @@ m6 <- step(m5)
 summary(m6)
 ```
 
+## Ordinal model the proposal is center<left<right
+```{r}
+set.seed(1310)
+t <- sample(1:nrow(df),round(0.66*nrow(df),0)) # rows for training
+train <- df[t,]  # working/training set
+test <- df[-t,]  # testing set
+library(MASS)
+om0 <- polr(f.vote~ 1 , data = train)
+summary(om0)
+om1 <- polr(f.vote ~ egoposition_immigration+political_interest+income, data = train) #numerical qualitative variables
+summary(om1)
+om2 <- step(om1)
+summary(om2)
+om3 <- polr(f.vote ~ egoposition_immigration*f.ostwest + egoposition_immigration+f.ostwest + egoposition_immigration*f.gender + egoposition_immigration+f.gender, data = train) #adding factors
+summary(om3)
+om4 <- step(om3)
+summary(om4)
+om4$zeta
+clogodd1 <- om4$zeta[1];clogodd1 #values of linear predictor
+clogodd2 <- om4$zeta[2];clogodd2
+gam1 <-exp(clogodd1)/(1+exp(clogodd1));gam1
+gam2 <- exp(clogodd2)/(1+exp(clogodd2));gam2
+pCenter <- gam1;pCenter
+pLeft <- gam2-gam1;pLeft
+pRight <- 1-gam2;pRight
+pCenter+pLeft+pRight==1 #return true
+```
+
+## Hierarchical Model
+```{r}
+#we use here the same train and test as above.
+train$f.vote_center<-ifelse(train$f.vote=="center", "center","other")
+train$f.vote_center<- factor(train$f.vote_center)
+summary(train)
+hm1 <- glm(f.vote_center ~ egoposition_immigration+political_interest+income, family = "binomial", data = train)
+summary(hm1)
+hm2 <- step(hm1)
+summary(hm2)
+hm3 <- glm(f.vote_center ~ egoposition_immigration*f.ostwest + egoposition_immigration+f.ostwest + egoposition_immigration*f.gender + egoposition_immigration+f.gender, family = "binomial", data = train)
+summary(hm3)
+hm4 <- step(hm3)
+summary(hm4)
+AIC(hm4,hm3,hm2,hm1)
+hm5 <- glm(f.vote ~ egoposition_immigration+political_interest+income, family = "binomial", data = train[train$f.vote_center=="other",])
+summary(hm5)
+hm6 <- step(hm5)
+summary(hm6)
+hm7 <- glm(f.vote ~ egoposition_immigration*f.ostwest + egoposition_immigration*f.gender + political_interest*f.ostwest + political_interest*f.gender + egoposition_immigration + political_interest + f.ostwest + f.gender, family = "binomial", data = train[train$f.vote_center == "other", ])
+summary(hm7)
+hm8 <- step(hm7)
+summary(hm8)
+AIC(hm8)+AIC(hm4)
+AIC(om4,mm4)
+#we can see that the HL model  gives the lowest AIC.
+
+ttn<- table(predict(mm4),train$f.vote);ttn
+100*sum(diag(ttn))/sum(ttn)
+tto <- table(predict(om4),train$f.vote);tto
+100*sum(diag(tto))/sum(tto)
+
+table( ifelse(predict(hm4,type="response")>0.5,"other","center"),train$f.vote_center)
+table(factor(ifelse(predict(hm8,type="response")<0.5,"left","right"),levels=c("left","right")),train$f.vote[train$f.vote != "center"])
+100*(427+166+37)/660 #here we get a very high accuracy so I wonder if I have done it right
+
+```
+
 ### Goodness of fit and model interpretation
 
 **Goodness of fit**
