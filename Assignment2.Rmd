@@ -217,7 +217,6 @@ attributes_report  <- data.frame(attributes = c(names(df[,c(1:6)])), errors=numb
 print(attributes_report)
 
 # per individual
-
 individuals_report = df[,c("error","outlier", "na")]
 print(individuals_report)
 
@@ -339,7 +338,6 @@ summary(m4)
 
 ```
 
-
 Model with target variable vote only
 ```{r}
 library(nnet)
@@ -415,71 +413,6 @@ m6 <- step(m5)
 summary(m6)
 ```
 
-## Ordinal model the proposal is center<left<right
-```{r}
-set.seed(1310)
-t <- sample(1:nrow(df),round(0.66*nrow(df),0)) # rows for training
-train <- df[t,]  # working/training set
-test <- df[-t,]  # testing set
-library(MASS)
-om0 <- polr(f.vote~ 1 , data = train)
-summary(om0)
-om1 <- polr(f.vote ~ egoposition_immigration+political_interest+income, data = train) #numerical qualitative variables
-summary(om1)
-om2 <- step(om1)
-summary(om2)
-om3 <- polr(f.vote ~ egoposition_immigration*f.ostwest + egoposition_immigration+f.ostwest + egoposition_immigration*f.gender + egoposition_immigration+f.gender, data = train) #adding factors
-summary(om3)
-om4 <- step(om3)
-summary(om4)
-om4$zeta
-clogodd1 <- om4$zeta[1];clogodd1 #values of linear predictor
-clogodd2 <- om4$zeta[2];clogodd2
-gam1 <-exp(clogodd1)/(1+exp(clogodd1));gam1
-gam2 <- exp(clogodd2)/(1+exp(clogodd2));gam2
-pCenter <- gam1;pCenter
-pLeft <- gam2-gam1;pLeft
-pRight <- 1-gam2;pRight
-pCenter+pLeft+pRight==1 #return true
-```
-
-## Hierarchical Model
-```{r}
-#we use here the same train and test as above.
-train$f.vote_center<-ifelse(train$f.vote=="center", "center","other")
-train$f.vote_center<- factor(train$f.vote_center)
-summary(train)
-hm1 <- glm(f.vote_center ~ egoposition_immigration+political_interest+income, family = "binomial", data = train)
-summary(hm1)
-hm2 <- step(hm1)
-summary(hm2)
-hm3 <- glm(f.vote_center ~ egoposition_immigration*f.ostwest + egoposition_immigration+f.ostwest + egoposition_immigration*f.gender + egoposition_immigration+f.gender, family = "binomial", data = train)
-summary(hm3)
-hm4 <- step(hm3)
-summary(hm4)
-AIC(hm4,hm3,hm2,hm1)
-hm5 <- glm(f.vote ~ egoposition_immigration+political_interest+income, family = "binomial", data = train[train$f.vote_center=="other",])
-summary(hm5)
-hm6 <- step(hm5)
-summary(hm6)
-hm7 <- glm(f.vote ~ egoposition_immigration*f.ostwest + egoposition_immigration*f.gender + political_interest*f.ostwest + political_interest*f.gender + egoposition_immigration + political_interest + f.ostwest + f.gender, family = "binomial", data = train[train$f.vote_center == "other", ])
-summary(hm7)
-hm8 <- step(hm7)
-summary(hm8)
-AIC(hm8)+AIC(hm4)
-AIC(om4,mm4)
-#we can see that the HL model  gives the lowest AIC.
-
-ttn<- table(predict(mm4),train$f.vote);ttn
-100*sum(diag(ttn))/sum(ttn)
-tto <- table(predict(om4),train$f.vote);tto
-100*sum(diag(tto))/sum(tto)
-
-table( ifelse(predict(hm4,type="response")>0.5,"other","center"),train$f.vote_center)
-table(factor(ifelse(predict(hm8,type="response")<0.5,"left","right"),levels=c("left","right")),train$f.vote[train$f.vote != "center"])
-100*(427+166+37)/660 #here we get a very high accuracy so I wonder if I have done it right
-
-```
 
 ### Goodness of fit and model interpretation
 
@@ -535,13 +468,16 @@ predict(m4, type="probs", newdata=data.frame(egoposition_immigration=factor(5), 
 
 # neutral immigration, from east and female
 predict(m4, type="probs", newdata=data.frame(egoposition_immigration=factor(5), f.ostwest = factor("east"), f.gender=factor("female")))
-
-
 ```
 
 From this results we obtained that males and females from east and west with a neutral egoposition_immigration are more likely to vote for CDU/CSU and then SPD. So this means that gender and being from the west are not big factors in the predictibility of the model.
 
 **TODO**: Group levels to better explain the variability of predictions depending of egoposition_immigration.
+```{r}
+library(effects)
+plot(Effect(focal.predictors = c("egoposition_immigration"), m4))
+```
+
 
 **Predictive power**
 
@@ -555,8 +491,6 @@ tt<-table(predict(m4),train$vote);tt #Checks that the model i not predicting par
 
 tt
 100*sum(diag(tt))/sum(tt) # ACCURACY of the model
-
-
 ```
 
 On test
@@ -569,7 +503,6 @@ tt<-table(predict(m4, newdata = test),test$f.vote);tt #Checks that the model i n
 predicted <- predict(m4, newdata = test);predicted
 actual <- test$vote; actual
 
-
 library(caret)
 
 confusionMatrix(predicted, actual, mode = "everything")
@@ -577,38 +510,103 @@ confusionMatrix(predicted, actual, mode = "everything")
 
 We get an accuracy of 32% which is not a great result.
 
+
 ## Ordinal proposal
 
 ### Train test split
+```{r}
+set.seed(1310)
+t <- sample(1:nrow(df),round(0.66*nrow(df),0)) # rows for training
+train <- df[t,]  # working/training set
+test <- df[-t,]  # testing set
+
+```
+
 
 ### Baseline model
 
+```{r}
+library(MASS)
+
+om0 <- polr(vote~ 1 , data = train)
+summary(om0)
+om1 <- polr(vote ~ egoposition_immigration+political_interest+income, data = train) #numerical qualitative variables
+summary(om1)
+om2 <- step(om1)
+summary(om2)
+```
+
+
 ### Improving the model
+```{r}
+om3 <- polr(vote ~ egoposition_immigration*f.ostwest + egoposition_immigration+f.ostwest + egoposition_immigration*f.gender + egoposition_immigration+f.gender, data = train) #adding factors
+summary(om3)
+om4 <- step(om3)
+summary(om4)
+om4$zeta
+```
+
 
 ### Goodness of fit and model interpretation
-
-## 
-
 ```{r}
-
-
-
-exp(coef(m4))
-
+clogodd1 <- om4$zeta[1];clogodd1 #values of linear predictor
+clogodd2 <- om4$zeta[2];clogodd2
+gam1 <-exp(clogodd1)/(1+exp(clogodd1));gam1
+gam2 <- exp(clogodd2)/(1+exp(clogodd2));gam2
+pCenter <- gam1;pCenter
+pLeft <- gam2-gam1;pLeft
+pRight <- 1-gam2;pRight
+pCenter+pLeft+pRight==1 #return true
 ```
 
 ```{r}
+library(effects)
+plot(Effect(focal.predictors = c("egoposition_immigration"), om4))
+plot(Effect(focal.predictors = c("f.gender"), om4))
 
-
-ggplot(data = train, aes(x =  egoposition_immigration, 
-                                  y = f.vote)) +
-  geom_line() + # Mean
-  #facet_wrap(.~ c.use, ncol = 3) + #, scales = "free_y"
-  #scale_y_continuous() + # % labels
-  #scale_x_continuous() +
-  theme_bw() +
-  labs(y = "Observed logodds",
-       x = "egoposition_immigration") # Always label your axes ;)
 ```
 
 ## Herarchical proposal
+
+```{r}
+#we use here the same train and test as above.
+train$f.vote_center<-ifelse(train$f.vote=="center", "center","other")
+train$f.vote_center<- factor(train$f.vote_center)
+summary(train)
+hm1 <- glm(f.vote_center ~ egoposition_immigration+political_interest+income, family = "binomial", data = train)
+summary(hm1)
+hm2 <- step(hm1)
+summary(hm2)
+hm3 <- glm(f.vote_center ~ egoposition_immigration*f.ostwest + egoposition_immigration+f.ostwest + egoposition_immigration*f.gender + egoposition_immigration+f.gender, family = "binomial", data = train)
+summary(hm3)
+hm4 <- step(hm3)
+summary(hm4)
+AIC(hm4,hm3,hm2,hm1)
+hm5 <- glm(f.vote ~ egoposition_immigration+political_interest+income, family = "binomial", data = train[train$f.vote_center=="other",])
+summary(hm5)
+hm6 <- step(hm5)
+summary(hm6)
+hm7 <- glm(f.vote ~ egoposition_immigration*f.ostwest + egoposition_immigration*f.gender + political_interest*f.ostwest + political_interest*f.gender + egoposition_immigration + political_interest + f.ostwest + f.gender, family = "binomial", data = train[train$f.vote_center == "other", ])
+summary(hm7)
+hm8 <- step(hm7)
+summary(hm8)
+AIC(hm8)+AIC(hm4)
+AIC(om4,mm4)
+#we can see that the HL model  gives the lowest AIC.
+
+ttn<- table(predict(mm4),train$f.vote);ttn
+100*sum(diag(ttn))/sum(ttn)
+tto <- table(predict(om4),train$f.vote);tto
+100*sum(diag(tto))/sum(tto)
+
+table( ifelse(predict(hm4,type="response")>0.5,"other","center"),train$f.vote_center)
+table(factor(ifelse(predict(hm8,type="response")<0.5,"left","right"),levels=c("left","right")),train$f.vote[train$f.vote != "center"])
+100*(427+166+37)/660 #here we get a very high accuracy so I wonder if I have done it right
+
+```
+
+
+
+## Comparision of models
+
+# Conclusions
