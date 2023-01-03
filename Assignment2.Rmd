@@ -382,6 +382,7 @@ summary(mn11)
 
 # factors and iunteractions
 mn12 <- multinom(vote ~ f.pos_imm + f.gender + f.ostwest + f.pos_imm*f.gender + f.pos_imm*f.ostwest + f.gender*f.ostwest + f.pos_imm + f.gender + f.ostwest, data = train)
+###### the 3 variables f.pos_imm + f.gender + f.ostwest are redundant, they appear at the beginning of the model and at the end######
 summary(mn12)
 mn13 <- step(mn12)
 summary(mn13)
@@ -394,8 +395,9 @@ mn15 <- step(mn14)
 summary(mn15)
 AIC(mn4,mn15)
 
-# comparision of all models
-AIC(mn1, mn2, mn3, mn4, mn10,mn11,mn12,mn13, mn14, mn15)
+# comparison of all models
+AIC(mn1, mn2, mn3, mn4, mn10,mn11,mn12,mn13, mn14, mn15) 
+####maybe we dont have to present them all, because the model after the step necessarily has lower AIC####
 summary(mn10)
 summary(mn15)
 ```
@@ -572,6 +574,7 @@ summary(mo2)
 
 ```{r}
 mo3 <- polr(fo.vote ~ f.pos_imm*f.gender + f.pos_imm*f.ostwest + political_interest*f.ostwest + f.gender*political_interest + f.pos_imm + political_interest + f.ostwest + f.gender , data = train,Hess = TRUE) #adding factors #WE GET A WARNING MESSAGE HERE WHICH I THINK IT'S ODD, IT DOESNT LET ME GENERATE SUMMARY UNLESS I ADD Hess = TRUE
+###### Missings: f.pos_imm*political_interest,f.gender*f.ostwest #######
 summary(mo3)
 mo4 <- step(mo3)
 summary(mo4)
@@ -609,7 +612,7 @@ mo4$zeta
 
 ```
 
-As we can see the we get a coefieicient of 0.938 for the open level and -1.13 for the restricctive level of pos_imm. Female h as a coefficient of 0.33 and finally, for each political_interest variable there are coefficient vvalues around 3.
+As we can see the we get a coefieicient of 0.938 for the open level and -1.13 for the restrictive level of pos_imm. Female h as a coefficient of 0.33 and finally, for each political_interest variable there are coefficient values around 3.
 
 **Prediction of probabilities**
 
@@ -621,7 +624,7 @@ predict(mo4, type="probs", newdata=data.frame(f.pos_imm=factor("restrictive"), f
 predict(mo4, type="probs", newdata=data.frame(f.pos_imm=factor("restrictive"), f.gender=factor("male"),political_interest=factor(0)))
 ```
 
-As we can see in the model follows a similar behavior as the nominal model: restrictive about immigration and less political interest are more likly to vote for rights and on the other hand, open and high political_interest are more likely to vote for left and so on.
+As we can see in the model follows a similar behavior as the nominal model: restrictive about immigration and less political interest are more likely to vote for rights and on the other hand, open and high political_interest are more likely to vote for left and so on.
 
 **Effects**
 
@@ -699,6 +702,8 @@ Grouping variables 2 levels improved drastically the aikaike score.
 ```{r}
 
 mh3 <- glm(f.vote_center ~ f.pos_imm*f.ostwest + f.pos_imm+f.ostwest + f.pos_imm*f.gender + f.ostwest*f.gender + f.pos_imm+f.gender, family = "binomial", data = train)
+#### Missings: f.ostwest ####
+#### appear twice: f.pos_imm+f.ostwest ####
 summary(mh3)
 mh4 <- step(mh3)
 summary(mh4)
@@ -714,6 +719,7 @@ summary(mh6)
 
 
 mh7 <- glm(f.vote ~ f.pos_imm*f.ostwest + f.pos_imm*f.gender + political_interest*f.ostwest + political_interest*f.gender + f.pos_imm + political_interest + f.ostwest + f.gender, family = "binomial", data = train[train$f.vote_center == "other", ])
+#### Missings: political_interest*f.pos_imm, f.ostwest*f.gender ####
 summary(mh7)
 mh8 <- step(mh7)
 summary(mh8)
