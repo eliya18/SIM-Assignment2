@@ -165,7 +165,7 @@ The levels that are "outliers" won't be removed. However, it's important to keep
 
 ### Multivariate
 
-Detecting multivariate outliers it's not an easy process since all data is factors and we can't apply methods like mahalanobis distance. One solution could be using MCA (factorial method) to detect anomalies.
+Detecting multivariate outliers it's not an easy process since all data is factors and we can't apply methods like mahalanobis or cooks distance. One solution could be using MCA (factorial method) to detect anomalies.
 
 ## Missing data
 
@@ -176,6 +176,9 @@ is.null(df) #no nulls in the data
 number_of_na_per_attribute = c(rep(0, 6));number_of_na_per_attribute
 df$na = 0
 ```
+
+
+The results are not great
 
 ## Data quality report
 
@@ -200,8 +203,6 @@ Let's compute the most problematic atrributes
 attributes_report$total <- attributes_report$error +  attributes_report$outlier + attributes_report$na
 attributes_report = attributes_report[order(attributes_report$total,decreasing = TRUE),]
 print(attributes_report)
-
-
 ```
 
 Finally let's check the most problematic individuals
@@ -214,8 +215,7 @@ individuals_report = individuals_report[order(individuals_report$total,decreasin
 print(individuals_report)
 ```
 
-As we can see in general, data quality is pretty good. The only thing it might need is to group some levels in further iterations
-
+As we can see in general, data quality is pretty good. There are no erros, outliers or missing data. The only thing it might need is to group some levels in further iterations. We leveled that categories that are really low in comparison to the others as outliers so we can have in mind which are the least frequent.
 
 ```{r}
 summary(df)
@@ -310,7 +310,7 @@ We are starting with the null model and then looking at a model with numerical v
 ```{r}
 library(nnet)
 mn0 <- multinom(vote ~ 1, data = train) #we start from the null model
-summary(m0)
+summary(mn0)
 mn1 <- multinom(vote ~ egoposition_immigration+political_interest+income, data = train)
 summary(mn1)
 #perform step for the best model so far
@@ -526,7 +526,7 @@ library(MASS)
 mo0 <- polr(fo.vote ~ 1 , data = train)
 summary(mo0)
 summary(train)
-mo1 <- polr(fo.vote ~ f.pos_imm+political_interest+income, data = train) #numeric qualitative variables
+mo1 <- polr(fo.vote ~ political_interest+income, data = train) #numeric qualitative variables
 summary(mo1)
 mo2 <- step(mo1)
 summary(mo2)
@@ -578,11 +578,10 @@ summary(mo4)
 anova(mo4,mo3)
 AIC(mo4,mo3)
 
- # mo4 Akaike 2131
+# mo4 Akaike 2131
 ```
 
 The model chosen as the best model is the model mo4 which formula is the following: formula = fo.vote ~ f.pos_imm + f.gender + political_interest.
-
 
 
 ### Goodness of fit and model interpretation
@@ -667,8 +666,6 @@ confusionMatrix(predicted, actual, mode = "everything")
 
 We can see that the best model found get's a 35% of accuracy on train and  31% of accuracy on test. Those are not better results than the nominal proposal.
 
-
-
 ## Herarchical proposal
 
 The final propousal is the herarchical which will require to group target variable into 3 levels: left, center, right. 
@@ -683,7 +680,7 @@ We will try an herarchical model with people who votes for the center (majority)
 
 mh0 <- glm(f.vote_center ~ 1, family = "binomial", data = train)
 summary(mh0)
-mh1 <- glm(f.vote_center ~ f.pos_imm+political_interest+income, family = "binomial", data = train)
+mh1 <- glm(f.vote_center ~ political_interest+income, family = "binomial", data = train)
 summary(mh1)
 mh2 <- step(mh1)
 summary(mh2)
@@ -692,16 +689,19 @@ summary(mh2)
 
 Grouping variables 2 levels improved drastically the aikaike score.
 
+-- 1st  CENTER OTHER
+-- 2nd       LEFT RIGHT
+
 ### Improving the model
 
 #### Adding factors and interactions
 
 ```{r}
 
-mh3 <- glm(f.vote_center ~ f.pos_imm*f.ostwest + f.pos_imm+f.ostwest + f.pos_imm*f.gender + f.pos_imm+f.gender, family = "binomial", data = train)
+mh3 <- glm(f.vote_center ~ f.pos_imm*f.ostwest + f.pos_imm+f.ostwest + f.pos_imm*f.gender + f.ostwest*f.gender + f.pos_imm+f.gender, family = "binomial", data = train)
 summary(mh3)
 mh4 <- step(mh3)
-summary(hm4)
+summary(mh4)
 #comparision
 anova(mh3, mh4)
 AIC(mh0, mh1,mh2,mh3,mh4)
@@ -718,6 +718,9 @@ summary(mh7)
 mh8 <- step(mh7)
 summary(mh8)
 AIC(mh8,mh7)
+
+AIC(mh8)+AIC(mh4)
+
 ```
 
 ### Model interpretation
@@ -732,6 +735,8 @@ We will interpret the different we will interpret the values of the coefficients
 summary(mh4)
 coef(mh4)
 
+summary(mh8)
+coef(mh8)
 ```
 
 As we can see the we get a coefieicient of 0.279 for the open level and 2.0178 for the restrictive level of pos_imm. eastern people have a -0.458 of coefficiient and females as a coefficient of -0.09 and finally, for each political_interest variable there are coefficient vvalues around 3.
@@ -755,12 +760,18 @@ Let's check the predictive power of the model using both train and test data and
 
 #we can see that the HL model  gives the lowest AIC.
 
-tt<-table( ifelse(predict(mh4,type="response")>0.5,"other","center"),train$f.vote_center);tt
-100*sum(diag(tt))/sum(tt)
+tt_first_level<-table( ifelse(predict(mh4,type="response")>0.5,"other","center"),train$f.vote_center);tt_first_level
+tt_second_level<-table(factor(ifelse(predict(mh8,type="response")<0.5,"left","right"),levels=c("left","right")),train$f.vote[train$f.vote != "center"]);tt_second_level
+
+tt_first_level
+
+100*sum(diag(tt_first_level))/sum(tt_first_level) + 100*sum(diag(tt_second_level))/sum(tt_second_level)
+
+100*(440+165+30) / 660
 
 
-tt<-table(ifelse(predict(mh4,type="response")>0.5,"other","center"),test$f.vote_center)
-100*sum(diag(tt))/sum(tt)
+#tt<-table(ifelse(predict(mh4,type="response")>0.5,"other","center"),test$f.vote_center)
+#100*sum(diag(tt))/sum(tt)
 #table(factor(ifelse(predict(mh4,type="response")<0.5,"left","right"),levels=c("left","right")),train$f.vote[train$f.vote != "center"])
 #100*(427+166+37)/660 #here we get a very high accuracy so I wonder if I have done it right
 
@@ -781,8 +792,10 @@ From each propousal we iterated into the different steps and we obtained the bet
 - Herachical proposal: The best model is mh4 which is described by the following formula: f.vote_center ~ f.pos_imm * f.ostwest + f.pos_imm +  f.ostwest + f.pos_imm * f.gender + f.pos_imm + f.gender
 
 ```{r}
-AIC(mn10, mo4, mh4)
-BIC(mn10, mo4, mh4)
+AIC(mn10, mo4)
+AIC(mh4)+AIC(mh8)
+BIC(mn10, mo4)
+BIC(mh4)+BIC(mh8)
 ```
 
 As we can see the best model obtained based on AIC/BIC scores is clearly the herarchical. Also if we take into account the predictive power metrics for each one, the hierarchical model wins with 68% of accuracy vs 37% (nominal) and 35% (ordinal). However,  it's important to keep in mind that the hierarchical model have an aggregated target that is unbalanced so we think it would not be the best option. The best option due to the naturality of the data would be the nominal propousal.
