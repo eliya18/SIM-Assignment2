@@ -675,6 +675,7 @@ The final propousal is the herarchical which will require to group target variab
 We have 665 people hwo are laveled as "center", 266 as "left" and 69 as "right". This is a problem since target is clearly unbalanced.
 
 We will try an herarchical model with people who votes for the center (majority) and people who vote for other parties (left or right).
+
 ### Baseline model
 
 ```{r}
@@ -719,18 +720,8 @@ summary(mh8)
 AIC(mh8,mh7)
 ```
 
-### Goodness of fit and model interpretation
+### Model interpretation
 
-
-**Goodness of fit**
-
-```{r}
-
-mh4$deviance;mh4$edf;2*nrow(df)-mh4$edf
-1-pchisq(mh4$deviance, 2*nrow(df)-mh4$edf)
-```
-
-It's not working ....
 
 **Model interpretation**
 
@@ -744,16 +735,6 @@ coef(mh4)
 ```
 
 As we can see the we get a coefieicient of 0.279 for the open level and 2.0178 for the restrictive level of pos_imm. eastern people have a -0.458 of coefficiient and females as a coefficient of -0.09 and finally, for each political_interest variable there are coefficient vvalues around 3.
-
-**Prediction of probabilities**
-
-```{r}
-
-#predict(mh4, type="probs", newdata=data.frame(f.pos_imm=factor("mild"),  f.gender=factor("male"),political_interest=factor(2)))
-#predict(mo4, type="probs", newdata=data.frame(f.pos_imm=factor("open"), f.gender=factor("male"),political_interest=factor(4)))
-#predict(mo4, type="probs", newdata=data.frame(f.pos_imm=factor("restrictive"), f.gender=factor("male"),political_interest=factor(2)))
-#predict(mo4, type="probs", newdata=data.frame(f.pos_imm=factor("restrictive"), f.gender=factor("male"),political_interest=factor(0)))
-```
 
 **Effects**
 
@@ -769,49 +750,25 @@ As we can see from the plot for people that vote to center parties we can see th
 
 Let's check the predictive power of the model using both train and test data and find the performance metrics of the model.
 
-On train
-
-```{r}
-
-tt<-table(predict(mh4),train$f.vote_center);tt #Checks that the model i not predicting part times
-
-tt
-100*sum(diag(tt))/sum(tt) # ACCURACY of the model
-```
-
-On test
-
-```{r}
-tt<-table(predict(mh4, newdata = test),test$f.vote_center);tt #Checks that the model i not predicting part times
-100*sum(diag(tt))/sum(tt) # ACCURACY of the model
-
-
-predicted <- predict(mh4, newdata = test)
-actual <- test$f.vote_center
-
-library(caret)
-
-confusionMatrix(predicted, actual, mode = "everything")
-```
-
-We can see that the best model found get's a 35% of accuracy on train and  31% of accuracy on test. Those are not better results than the nominal proposal.
-
-
 
 ```{r}
 
 #we can see that the HL model  gives the lowest AIC.
 
-ttn<- table(predict(mm4),train$f.vote);ttn
-100*sum(diag(ttn))/sum(ttn)
-tto <- table(predict(om4),train$f.vote);tto
-100*sum(diag(tto))/sum(tto)
+tt<-table( ifelse(predict(mh4,type="response")>0.5,"other","center"),train$f.vote_center);tt
+100*sum(diag(tt))/sum(tt)
 
-table( ifelse(predict(hm4,type="response")>0.5,"other","center"),train$f.vote_center)
-table(factor(ifelse(predict(hm8,type="response")<0.5,"left","right"),levels=c("left","right")),train$f.vote[train$f.vote != "center"])
-100*(427+166+37)/660 #here we get a very high accuracy so I wonder if I have done it right
+
+tt<-table(ifelse(predict(mh4,type="response")>0.5,"other","center"),test$f.vote_center)
+100*sum(diag(tt))/sum(tt)
+#table(factor(ifelse(predict(mh4,type="response")<0.5,"left","right"),levels=c("left","right")),train$f.vote[train$f.vote != "center"])
+#100*(427+166+37)/660 #here we get a very high accuracy so I wonder if I have done it right
 
 ```
+
+
+We can see that the best model found get's a 68% of accuracy. The best metric so far, however it's important to keep in mind that data is highly unbalanced.
+
 
 # Comparision of models and conclusions
 
@@ -819,18 +776,17 @@ From each propousal we iterated into the different steps and we obtained the bet
 
 - Nomina proposal: The best model we found is the mn10 which is described by the folliwng formula: vote \~ f.pos_imm + f.ostwest + f.gender
 
-- Ordinal proposal: The best model is mo4 which is described by the following formula o.vote ~ f.pos_imm + f.gender + political_interest
+- Ordinal proposal: The best model is mo4 which is described by the following formula o.vote: ~ f.pos_imm + f.gender + political_interest
 
-- Herachical proposal: (Sill have to decide)
+- Herachical proposal: The best model is mh4 which is described by the following formula: f.vote_center ~ f.pos_imm * f.ostwest + f.pos_imm +  f.ostwest + f.pos_imm * f.gender + f.pos_imm + f.gender
 
 ```{r}
 AIC(mn10, mo4, mh4)
+BIC(mn10, mo4, mh4)
 ```
 
+As we can see the best model obtained based on AIC/BIC scores is clearly the herarchical. Also if we take into account the predictive power metrics for each one, the hierarchical model wins with 68% of accuracy vs 37% (nominal) and 35% (ordinal). However,  it's important to keep in mind that the hierarchical model have an aggregated target that is unbalanced so we think it would not be the best option. The best option due to the naturality of the data would be the nominal propousal.
 
-
-In this project we had to iterate for each propousal to try to obtain the best models. The data quality was very good so our main focus was in the modeling part. The best model we found is ...
-
-Also lk
+In this project we had to iterate for each proposal to try to obtain the best models. The data quality was very good so our main focus was in the modeling part. The main difficulties are that classes are unbalanced and also deciding on whether we should group levels of factors or not. The results are not great and we think that there are some explanatory variables that are missing that would be important for the models. However, we iterated and experimented with different steps and methods to try to explain the results.
 
 
