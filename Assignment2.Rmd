@@ -1,7 +1,9 @@
 ---
 title: "Assignment2"
-output: html_document
-editor_options: 
+output:
+  word_document: default
+  html_document: default
+editor_options:
   chunk_output_type: console
 ---
 
@@ -215,7 +217,7 @@ individuals_report = individuals_report[order(individuals_report$total,decreasin
 print(individuals_report)
 ```
 
-As we can see in general, data quality is pretty good. There are no erros, outliers or missing data. The only thing it might need is to group some levels in further iterations. We leveled that categories that are really low in comparison to the others as outliers so we can have in mind which are the least frequent.
+As we can see in general, data quality is pretty good. There are no erros, outliers or missing data. The only thing it might need is to group some levels in further iterations. We leveled that categories that are really low in comparison to the others as outliers so we can have in mind which are the least frequent and be able to rank them (they are not really outliers).
 
 ```{r}
 summary(df)
@@ -231,7 +233,7 @@ summary(df)
 
 First, we turn qualitative,nominal and ordinal variables into factors. When it's east/west or gender we trun it into a factor with the actual name.
 
-We can see the summary and nothing too suspicious when look at the data. We can see CDU/CSU party gets most votes on our sample, majority of voters are open for immigration (around 3,4,5), most voters are from the east of Germany, most voters have a plus average intrest in the elections, most voters income is relativity high because we can see that the variable (before being a factor) has a mean and median around 3 and as a factor we see 582 with income 3. In addition, no nulls or blanks in the data. From the boxplot we can see that income and east/west have points outside the box but we know why is it. When ploting the data we don't see anything suspicious When define political orientation we see most voters are center, then left and the less is right, we can see that 2/3 of the voters are voting for the center parties.
+We can see the summary and nothing too suspicious when look at the data. We can see CDU/CSU party gets most votes on our sample, majority of voters are open for immigration (around 3,4,5), most voters are from the east of Germany, most voters have a plus average intrest in the elections, most voters income is relativity high because we can see that the variable (before being a factor) has a mean and median around 3 and as a factor we see 582 with income 3. In addition, no nulls or blanks in the data. From the boxplot we can see that income and east/west have points outside the box but we know why is it. When ploting the data we don't see anything suspicious. When define political orientation we see most voters are center, then left and the less is right, we can see that 2/3 of the voters are voting for the center parties.
 
 ```{r}
 library(car)
@@ -270,6 +272,8 @@ Right parties are mostly against immigration, they don't have much interest in p
 # Modeling
 
 Once data is preprocessed and understanded now we will start modeling and experimenting with the different logistic models. This process will be iterative and we will try mainly the nominal, ordinal and herarchical propousal
+
+The naming we used is mnX for nominal models, moX for ordinal models and mhX for herarchical models.
 
 ## Grouping levels
 
@@ -332,9 +336,6 @@ summary(mn3)
 mn4 <- step(mn3)
 summary(mn4)
 AIC(mn4,mn2)
-#FOR US ONLY - I think since we don't have numerical quantitative variable we don't have use for 2nd or 3rd order, I think there is a way to check whether or not we need it.
-#FOR US ONLY - we can also try to turn the immigration number into a range where 0-3, 4-7, 8-10 are open, mild, restrictive respectively - BUT I guess if we do that we should do it from the beginning where also the test data will appear like that otherwise we won't be able to compare the results under predict()
-
 ```
 
 #### Try: Model with grouped target
@@ -345,27 +346,24 @@ ow, we are taking f.vote which has 3 levels, each party is classified to 3 orien
 
 ```{r}
 
-#mn5 <- multinom(f.vote ~ 1, data = train) #we start from the null model
-#summary(mn5)
+mn5 <- multinom(f.vote ~ 1, data = train) #we start from the null model
+summary(mn5)
 #we do not have numerical quantitative variable and since all of the rest are based on numerical nominal variables we will use all of them
-#mn6 <- multinom(f.vote ~ egoposition_immigration+political_interest+income, data = train)
-#summary(mn6)
+mn6 <- multinom(f.vote ~ egoposition_immigration+political_interest+income, data = train)
+summary(mn6)
 #perform step for the best model so far
-#mn7 <- step(mn6)
-#summary(mn7) #best model so far has D() of 906.63 and AIC 950.63
-#anova(mn6,mn7) #we cannot reject the null hypothesis and the models are equivalent so it is better for us the small model when we already know it's significant that they are equivalent
-#mn8 <- multinom(f.vote ~ egoposition_immigration*f.ostwest + egoposition_immigration+f.ostwest + egoposition_immigration*f.gender + egoposition_immigration+f.gender + f.gender*f.ostwest, data = train) #adding interactions and additive of the factors
-#summary(mn8)
-#mn9 <- step(mn8)
-#summary(mn9) #best model so far we got f.vote ~ egoposition_immigration + f.ostwest + f.gender
-#results are Deviance = 886.0369 AIC = 942.0369 
+mn7 <- step(mn6)
+summary(mn7) #best model so far has D() of 906.63 and AIC 950.63
+anova(mn6,mn7) #we cannot reject the null hypothesis and the models are equivalent so it is better for us the small model when we already know it's significant that they are equivalent
+mn8 <- multinom(f.vote ~ egoposition_immigration*f.ostwest + egoposition_immigration+f.ostwest + egoposition_immigration*f.gender + egoposition_immigration+f.gender + f.gender*f.ostwest, data = train) #adding interactions and additive of the factors
+summary(mn8)
+mn9 <- step(mn8)
+summary(mn9) #best model so far we got f.vote ~ egoposition_immigration + f.ostwest + f.gender
+#results are Deviance = 886.0369 AIC = 942.0369
 #since we don't have order between left center right we use multinom() and not polr()
-#FOR US ONLY - I think since we don't have numerical quantitative variable we don't have use for 2nd or 3rd order, I think there is a way to check whether or not we need it.
-#FOR US ONLY - we can also try to turn the immigration number into a range where 0-3, 4-7, 8-10 are open, mild, restrictive respectively - BUT I guess if we do that we should do it from the beginning where also the test data will appear like that otherwise we won't be able to compare the results under predict()
-#anova(mn8,mn9)
-#AIC(mn5,mn6,mn7,mn8, mn9)
-#what should we do when 2 models which one has low AIC but higher deviance compare to the other model (as we see between m3 and m4)
-#AIC(mn4,mn9)
+anova(mn8,mn9)
+AIC(mn5,mn6,mn7,mn8, mn9)
+AIC(mn4,mn9)
 ```
 
 #### Try: Model with grouped immigration
@@ -381,8 +379,7 @@ mn11 <- step(mn10) #the null model is the best in such case
 summary(mn11) 
 
 # factors and iunteractions
-mn12 <- multinom(vote ~ f.pos_imm + f.gender + f.ostwest + f.pos_imm*f.gender + f.pos_imm*f.ostwest + f.gender*f.ostwest + f.pos_imm + f.gender + f.ostwest, data = train)
-###### the 3 variables f.pos_imm + f.gender + f.ostwest are redundant, they appear at the beginning of the model and at the end######
+mn12 <- multinom(vote ~ f.pos_imm*f.gender + f.pos_imm*f.ostwest + f.gender*f.ostwest + f.pos_imm + f.gender + f.ostwest, data = train)
 summary(mn12)
 mn13 <- step(mn12)
 summary(mn13)
@@ -418,7 +415,7 @@ mn10$deviance;mn10$edf;2*nrow(df)-mn10$edf
 1-pchisq(mn10$deviance, 2*nrow(df)-mn10$edf)
 ```
 
-For the best model obtained which include egoposition_immigration, f.ostwest and f.gender has a p value of 0.1987459. This means that we fail to reject H0 where the model is consistent to data so we conclude by saying model fit's well the data.
+For the best model obtained which include f.pos_imm, f.ostwest and f.gender has a p value of 0.1987459. This means that we fail to reject H0 where the model is consistent to data so we conclude by saying model fit's well the data.
 
 **Model interpretation**
 
@@ -519,8 +516,6 @@ The target variable does not have a natural order to get so it's better to use n
 
 - AfD\<CDU/CSU\<FDP\<Gruene\<LINKE\<SPD
 
-Also for this proposal we will use the aggregated egoposition_immigration (pos_imm) since it gave better results and it's easier to explain.
-
 ### Baseline model
 
 ```{r}
@@ -532,39 +527,7 @@ mo1 <- polr(fo.vote ~ political_interest+income, data = train) #numeric qualitat
 summary(mo1)
 mo2 <- step(mo1)
 summary(mo2)
-#train$f.gender <- factor(train$f.gender, levels = c("male","female"), ordered = T)
-#train$f.ostwest <- factor(train$f.ostwest, levels = c("east", "west") , ordered = T)
 
-
-```
-
-
-```{r}
-#set.seed(1310)
-# t <- sample(1:nrow(df),round(0.66*nrow(df),0)) # rows for training
-# train <- df[t,]  # working/training set
-# test <- df[-t,]  # testing set
-# library(MASS)
-# om0 <- polr(f.vote~ 1 , data = train)
-# summary(om0)
-# om1 <- polr(f.vote ~ egoposition_immigration+political_interest+income, data = train) #numerical qualitative variables
-# summary(om1)
-# om2 <- step(om1)
-# summary(om2)
-# om3 <- polr(f.vote ~ egoposition_immigration*f.ostwest + egoposition_immigration+f.ostwest + egoposition_immigration*f.gender + egoposition_immigration+f.gender, data = train) #adding factors
-# summary(om3)
-# om4 <- step(om3)
-# summary(om4)
-# om4$zeta
-# clogodd1 <- om4$zeta[1];clogodd1 #values of linear predictor
-# clogodd2 <- om4$zeta[2];clogodd2
-# gam1 <-exp(clogodd1)/(1+exp(clogodd1));gam1
-# gam2 <- exp(clogodd2)/(1+exp(clogodd2));gam2
-# pCenter <- gam1;pCenter
-# pLeft <- gam2-gam1;pLeft
-# pRight <- 1-gam2;pRight
-# pCenter+pLeft+pRight==1 #return true
-# AIC(om4,omm4) #we get a better AIC when we aggregate the different parties into 3 political ideologies 
 ```
 
 
@@ -573,8 +536,8 @@ summary(mo2)
 #### Adding factors and interactions
 
 ```{r}
-mo3 <- polr(fo.vote ~ f.pos_imm*f.gender + f.pos_imm*f.ostwest + political_interest*f.ostwest + f.gender*political_interest + f.pos_imm + political_interest + f.ostwest + f.gender , data = train,Hess = TRUE) #adding factors #WE GET A WARNING MESSAGE HERE WHICH I THINK IT'S ODD, IT DOESNT LET ME GENERATE SUMMARY UNLESS I ADD Hess = TRUE
-###### Missings: f.pos_imm*political_interest,f.gender*f.ostwest #######
+mo3 <- polr(fo.vote ~ f.pos_imm*f.gender + f.pos_imm*f.ostwest + political_interest*f.ostwest + f.gender*political_interest + f.pos_imm + political_interest + f.ostwest + f.gender + f.pos_imm*political_interest + f.gender*f.ostwest , data = train,Hess = TRUE) #adding factors #WE GET A WARNING MESSAGE HERE WHICH I THINK IT'S ODD, IT DOESNT LET ME GENERATE SUMMARY UNLESS I ADD Hess = TRUE
+###### Missings: f.pos_imm*political_interest + f.gender*f.ostwest #######
 summary(mo3)
 mo4 <- step(mo3)
 summary(mo4)
@@ -584,8 +547,34 @@ AIC(mo4,mo3)
 # mo4 Akaike 2131
 ```
 
-The model chosen as the best model is the model mo4 which formula is the following: formula = fo.vote ~ f.pos_imm + f.gender + political_interest.
+#### Try: Grouped target
 
+```{r}
+mo5 <- polr(f.vote ~ political_interest+income, data = train) #numerical qualitative variables
+summary(mo5)
+mo6 <- step(mo5)
+summary(mo6)
+
+mo7 <- polr(f.vote ~ f.pos_imm*f.gender + f.pos_imm*f.ostwest + political_interest*f.ostwest + f.gender*political_interest + f.pos_imm + political_interest + f.ostwest + f.gender + f.pos_imm*political_interest + f.gender*f.ostwest , data = train,Hess = TRUE) #adding factors
+summary(mo7)
+mo8 <- step(mo7)
+summary(mo8)
+mo8$zeta
+clogodd1 <- mo8$zeta[1];clogodd1 #values of linear predictor
+clogodd2 <- mo8$zeta[2];clogodd2
+gam1 <-exp(clogodd1)/(1+exp(clogodd1));gam1
+gam2 <- exp(clogodd2)/(1+exp(clogodd2));gam2
+pCenter <- gam1;pCenter
+pLeft <- gam2-gam1;pLeft
+pRight <- 1-gam2;pRight
+pCenter+pLeft+pRight==1 #return true
+AIC(mo4,mo8) #we get a better AIC when we aggregate the different parties into 3 political ideologies
+```
+
+
+The model with grouped variable gave us a lower Aikaike score but since it's aggregated target, we decided to keep the target with the 6 ordered levels.
+
+The model chosen as the best model is the model mo4 which formula is the following: formula = fo.vote ~ f.pos_imm + f.gender +  f.ostwest + political_interest + f.gender:f.ostwest.
 
 ### Goodness of fit and model interpretation
 
@@ -598,7 +587,7 @@ mo4$deviance;mo4$edf;2*nrow(df)-mo4$edf
 1-pchisq(mo4$deviance, 2*nrow(df)-mo4$edf)
 ```
 
-For the best model obtained which include egoposition_immigration, f.gender and political_interest has a p value of 0.03077579 This means that we reject H0 where the model is consistent to data so we conclude by saying model does not fit well data.
+For the best model obtained which include egoposition_immigration, f.gender and political_interest has a p value of 0.03143539 This means that we reject H0 where the model is consistent to data so we conclude by saying model does not fit well data.
 
 **Model interpretation**
 
@@ -610,33 +599,42 @@ summary(mo4)
 coef(mo4)
 mo4$zeta
 
+summary_table <- coef(summary(mo4))
+pval <- pnorm(abs(summary_table[, "t value"]),lower.tail = FALSE)* 2
+summary_table <- cbind(summary_table, "p value" = round(pval,3))
+summary_table
 ```
 
-As we can see the we get a coefieicient of 0.938 for the open level and -1.13 for the restrictive level of pos_imm. Female h as a coefficient of 0.33 and finally, for each political_interest variable there are coefficient values around 3.
+As we can see the we get a coefieicient of 0.945 for the open level and  -1.104 for the restrictive level of pos_imm. Female h as a coefficient of -0.06 and finally, for each political_interest variable there are coefficient values around 3. Also there is the interaction of being a female and being from the west which has a coefficient of 0.53377. Finally, if we check the p values, the variable of f.pos_imm and political_interest have a p value less than 0.5 which means that they are statistically significant at a 95 CI.
+
+
+Also from the intercepts, we can see the cumulative logodds and we can see that voting for AfD vs the other parties is 0.668 and voting for AfD or CDU/CSU it goest to 3.000 vs other parties. Then it's more stable and it does not change that much so CSU/CSU takes into account a lot of the cumulative logodss.
+
 
 **Prediction of probabilities**
 
 ```{r}
 
-predict(mo4, type="probs", newdata=data.frame(f.pos_imm=factor("mild"),  f.gender=factor("male"),political_interest=factor(2)))
-predict(mo4, type="probs", newdata=data.frame(f.pos_imm=factor("open"), f.gender=factor("male"),political_interest=factor(4)))
-predict(mo4, type="probs", newdata=data.frame(f.pos_imm=factor("restrictive"), f.gender=factor("male"),political_interest=factor(2)))
-predict(mo4, type="probs", newdata=data.frame(f.pos_imm=factor("restrictive"), f.gender=factor("male"),political_interest=factor(0)))
+predict(mo4, type="probs", newdata=data.frame(f.pos_imm=factor("mild"),  f.gender=factor("male"), f.ostwest = factor("east"),political_interest=factor(2)))
+predict(mo4, type="probs", newdata=data.frame(f.pos_imm=factor("open"), f.gender=factor("male"),f.ostwest = factor("west"),political_interest=factor(4)))
+predict(mo4, type="probs", newdata=data.frame(f.pos_imm=factor("restrictive"), f.gender=factor("male"),f.ostwest = factor("west"),political_interest=factor(2)))
+predict(mo4, type="probs", newdata=data.frame(f.pos_imm=factor("restrictive"), f.gender=factor("male"),f.ostwest = factor("west"),political_interest=factor(0)))
 ```
 
-As we can see in the model follows a similar behavior as the nominal model: restrictive about immigration and less political interest are more likely to vote for rights and on the other hand, open and high political_interest are more likely to vote for left and so on.
+As we can see in the model follows a similar behavior as the nominal model: restrictive about immigration and less political interest are more likely to vote for rights and on the other hand, open and high political_interest are more likely to vote for left and so on. The other variables (gender and f.ostwest) don't have to seem to much impact in predictive outcome.
 
 **Effects**
 
 ```{r}
 library(effects)
 plot(Effect(focal.predictors = c("f.pos_imm"), mo4))
-
+plot(Effect(focal.predictors = c("f.ostwest"), mo4))
 plot(Effect(focal.predictors = c("f.gender"), mo4))
 plot(Effect(focal.predictors = c("political_interest"), mo4))
 ```
 
 For this model we can see that the effects are similar as the nominal model. The main inights we can gather are that restrictive people in immigration are also more likely to votge for CDU/CSU (right-center). Also for political interest, people with 0 political interest have a 60% of probability to vote for AfD (right).
+
 
 **Predictive power**
 
@@ -676,6 +674,9 @@ We have 665 people hwo are laveled as "center", 266 as "left" and 69 as "right".
 
 We will try an herarchical model with people who votes for the center (majority) and people who vote for other parties (left or right).
 
+-- 1st  CENTER OTHER
+-- 2nd       LEFT RIGHT
+
 ### Baseline model
 
 ```{r}
@@ -692,18 +693,14 @@ summary(mh2)
 
 Grouping variables 2 levels improved drastically the aikaike score.
 
--- 1st  CENTER OTHER
--- 2nd       LEFT RIGHT
-
 ### Improving the model
 
 #### Adding factors and interactions
 
 ```{r}
-
+# First level
 mh3 <- glm(f.vote_center ~ f.pos_imm*f.ostwest + f.pos_imm+f.ostwest + f.pos_imm*f.gender + f.ostwest*f.gender + f.pos_imm+f.gender, family = "binomial", data = train)
-#### Missings: f.ostwest ####
-#### appear twice: f.pos_imm+f.ostwest ####
+
 summary(mh3)
 mh4 <- step(mh3)
 summary(mh4)
@@ -711,15 +708,13 @@ summary(mh4)
 anova(mh3, mh4)
 AIC(mh0, mh1,mh2,mh3,mh4)
 
-## --- don't understand this part)
+## --- Second level
 mh5 <- glm(f.vote ~ f.pos_imm+political_interest+income, family = "binomial", data = train[train$f.vote_center=="other",])
 summary(mh5)
 mh6 <- step(mh5)
 summary(mh6)
+mh7 <- glm(f.vote ~ f.pos_imm*f.ostwest + f.pos_imm*f.gender + political_interest*f.ostwest + political_interest*f.gender + f.pos_imm + political_interest + f.ostwest + f.gender +  political_interest*f.pos_imm + f.ostwest*f.gender, family = "binomial", data = train[train$f.vote_center == "other", ])
 
-
-mh7 <- glm(f.vote ~ f.pos_imm*f.ostwest + f.pos_imm*f.gender + political_interest*f.ostwest + political_interest*f.gender + f.pos_imm + political_interest + f.ostwest + f.gender, family = "binomial", data = train[train$f.vote_center == "other", ])
-#### Missings: political_interest*f.pos_imm, f.ostwest*f.gender ####
 summary(mh7)
 mh8 <- step(mh7)
 summary(mh8)
@@ -745,17 +740,22 @@ summary(mh8)
 coef(mh8)
 ```
 
-As we can see the we get a coefieicient of 0.279 for the open level and 2.0178 for the restrictive level of pos_imm. eastern people have a -0.458 of coefficiient and females as a coefficient of -0.09 and finally, for each political_interest variable there are coefficient vvalues around 3.
+As we can see the we get a coefieicient of 0.279 for the open level and 2.0178 for the restrictive level of pos_imm. eastern people have a -0.458 of coefficiient and females as a coefficient of -0.09 and finally, for each political_interest variable there are coefficient vvalues around 3. We can see that restrictive level pos_imm and the interaction between restrictive and being a female is statsitifically sifnificant for a 95.
 
 **Effects**
 
 ```{r}
 library(effects)
 plot(allEffects(mh4))
-
+plot(allEffects(mh8))
+summary(mh8)
 ```
 
-As we can see from the plot for people that vote to center parties we can see that people from the east are more likly to be open than people from the west and male are more likly to be restrictive than females.
+As we can see from the plot, we can see that people from the east and that they are open about immigration are more likely to vote center. At the same time people that are restrictive and are from the west have a higher probability to vote center as well. 
+
+Also we can see that men who are restrictive and females who are open are more likely to vote for center.
+
+However, we can see in the effects plot tthat the confidence interval is very wide.
 
 **Predictive power**
 
@@ -769,23 +769,17 @@ Let's check the predictive power of the model using both train and test data and
 tt_first_level<-table( ifelse(predict(mh4,type="response")>0.5,"other","center"),train$f.vote_center);tt_first_level
 tt_second_level<-table(factor(ifelse(predict(mh8,type="response")<0.5,"left","right"),levels=c("left","right")),train$f.vote[train$f.vote != "center"]);tt_second_level
 
-tt_first_level
 
 100*sum(diag(tt_first_level))/sum(tt_first_level) + 100*sum(diag(tt_second_level))/sum(tt_second_level)
 
+#hardcoded resutls
 100*(440+165+30) / 660
 
-
-#tt<-table(ifelse(predict(mh4,type="response")>0.5,"other","center"),test$f.vote_center)
-#100*sum(diag(tt))/sum(tt)
-#table(factor(ifelse(predict(mh4,type="response")<0.5,"left","right"),levels=c("left","right")),train$f.vote[train$f.vote != "center"])
-#100*(427+166+37)/660 #here we get a very high accuracy so I wonder if I have done it right
 
 ```
 
 
-We can see that the best model found get's a 68% of accuracy. The best metric so far, however it's important to keep in mind that data is highly unbalanced.
-
+We can see that the best model found get's a 96% of accuracy. The best metric so far, however it's important to keep in mind that data is highly unbalanced.
 
 # Comparision of models and conclusions
 
@@ -793,19 +787,21 @@ From each propousal we iterated into the different steps and we obtained the bet
 
 - Nomina proposal: The best model we found is the mn10 which is described by the folliwng formula: vote \~ f.pos_imm + f.ostwest + f.gender
 
-- Ordinal proposal: The best model is mo4 which is described by the following formula o.vote: ~ f.pos_imm + f.gender + political_interest
+- Ordinal proposal: The best model is mo4 which is described by the following formula fo.vote ~ f.pos_imm + f.gender +  f.ostwest + political_interest + f.gender:f.ostwest.
 
 - Herachical proposal: The best model is mh4 which is described by the following formula: f.vote_center ~ f.pos_imm * f.ostwest + f.pos_imm +  f.ostwest + f.pos_imm * f.gender + f.pos_imm + f.gender
 
 ```{r}
 AIC(mn10, mo4)
-AIC(mh4)+AIC(mh8)
+AIC(mh4)+AIC(mh8) # first and second level
 BIC(mn10, mo4)
 BIC(mh4)+BIC(mh8)
 ```
 
-As we can see the best model obtained based on AIC/BIC scores is clearly the herarchical. Also if we take into account the predictive power metrics for each one, the hierarchical model wins with 68% of accuracy vs 37% (nominal) and 35% (ordinal). However,  it's important to keep in mind that the hierarchical model have an aggregated target that is unbalanced so we think it would not be the best option. The best option due to the naturality of the data would be the nominal propousal.
+As we can see the best model obtained based on AIC/BIC scores is clearly the herarchical. Also if we take into account the predictive power metrics for each one, the hierarchical model wins with 96% of accuracy vs 37% (nominal) and 35% (ordinal). Also we think that herarchical modeling is a very natural approach to the kind of data we have (taking into account that each party is labeled as a left, center, right). However,  it's important to keep in mind that the hierarchical model have an aggregated target that is unbalanced so we think that it would perform even better if we manage do get balance data.
 
-In this project we had to iterate for each proposal to try to obtain the best models. The data quality was very good so our main focus was in the modeling part. The main difficulties are that classes are unbalanced and also deciding on whether we should group levels of factors or not. The results are not great and we think that there are some explanatory variables that are missing that would be important for the models. However, we iterated and experimented with different steps and methods to try to explain the results.
+Also for nominal and ordinal models we found out that we did not manage to get really good metrics and we think that it's because it has unbalance targets and we think that maybe there are some exploratory variables that are important factors on deciding between the 6 levels.
+
+In this project we had to iterate for each proposal to try to obtain the best models. The data quality was very good so our main focus was in the modeling part. The main difficulties are that classes are unbalanced and also deciding on whether we should group levels of factors or not. We belive that the results could be improved. However, we iterated and experimented with different steps and methods to try to explain the results.
 
 
